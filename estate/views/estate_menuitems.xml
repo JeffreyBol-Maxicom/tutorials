@@ -5,7 +5,10 @@
             <menuitem id="menu_estate_properties_action" action="estate_property_action" />
         </menuitem>
         <menuitem id="menu_estate_settings" name="Settings" sequence="2">
-            <menuitem id="menu_estate_property_type_action" action="estate_property_type_action" />
+            <menuitem id="menu_estate_property_type_action" action="estate_property_type_action"
+                sequence="1" />
+            <menuitem id="menu_estate_property_tag_action" action="estate_property_tag_action"
+                sequence="2" />
         </menuitem>
     </menuitem>
 </odoo>
