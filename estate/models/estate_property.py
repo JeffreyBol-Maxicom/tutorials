@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class Property(models.Model):
@@ -33,7 +33,7 @@ class Property(models.Model):
         default=2
     )
 
-    living_erea = fields.Integer(
+    living_area = fields.Integer(
         string="Living Area (sqm)"
     )
 
@@ -100,3 +100,28 @@ class Property(models.Model):
         inverse_name="property_id",
         string="Offers"
     )
+
+    total_area = fields.Integer(
+        compute="_compute_total_area",
+        string="Total Area (sqm)"
+    )
+
+    best_offer = fields.Float(
+        compute="_compute_best_offer"
+    )
+
+    @api.depends('living_area', 'garden_area')
+    def _compute_total_area(self):
+        for record in self:
+            record.total_area = record.living_area + record.garden_area
+
+    @api.depends('offer_ids')
+    def _compute_best_offer(self):
+        for record in self:
+            prices = self.offer_ids.mapped('price')
+            record.best_offer = max(prices)
+
+    @api.onchange("garden")
+    def _onchange_garden(self):
+        self.garden_area = 10 if self.garden else 0
+        self.garden_orientation = "north" if self.garden else None
