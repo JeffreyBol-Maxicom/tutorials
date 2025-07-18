@@ -1,5 +1,5 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError
 from odoo.tools import date_utils
 
 
@@ -37,6 +37,10 @@ class PropertyOffer(models.Model):
         inverse="_inverse_date_deadline"
     )
 
+    _sql_constraints = [
+        ("check_price", "CHECK(price > 0)", "An offer price must be strictly positive")
+    ]
+
     @api.depends("validity")
     def _compute_date_deadline(self):
         for record in self:
@@ -49,3 +53,29 @@ class PropertyOffer(models.Model):
                 record.create_date if record.create_date else fields.Date.today()
             )
             record.validity = (record.date_deadline - create_date).days
+
+    def action_accept(self):
+        for record in self:
+            # nothing to do if current record already accepted
+            if record.status == "accepted":
+                return True
+            # get all offers for property
+            property_offers = self.env['estate.property.offer'].search([("property_id", "=", record.property_id.id)])
+            # only one accepted offer allowed
+            if property_offers.filtered(lambda offer: offer.status == "accepted"):
+                raise UserError('Another offer already accepted')
+            # Accept selected offer
+            record.status = "accepted"
+            record.property_id.selling_price = record.price
+            record.property_id.partner_id = record.partner_id
+            # Refuse all other offers
+            property_offers.filtered(lambda offer: offer.status != "accepted").action_refuse()
+        return True
+
+    def action_refuse(self):
+        for record in self:
+            if record.status == "accepted":
+                record.property_id.selling_price = 0
+                record.property_id.partner_id = None
+            record.status = "refused"
+        return True

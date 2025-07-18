@@ -8,3 +8,7 @@ class PropertyType(models.Model):
     name = fields.Char(
         required=True
     )
+
+    _sql_constraints = [
+        ("unique_name", "UNIQUE(name)", "A property type name must be unique")
+    ]

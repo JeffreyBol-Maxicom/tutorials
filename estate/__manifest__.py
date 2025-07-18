@@ -1,5 +1,6 @@
 {
     "name": "estate",
+    "license": "Other proprietary",
     "depends": [
         "base",
     ],
