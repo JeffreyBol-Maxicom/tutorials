@@ -6,6 +6,7 @@ from odoo.tools import float_utils
 class Property(models.Model):
     _name = "estate.property"
     _description = "Real Estate properties"
+    _order = "id desc"
 
     name = fields.Char(
         string="Title",
@@ -117,12 +118,17 @@ class Property(models.Model):
         ("check_selling_price", "CHECK(selling_price >= 0)", "A property selling price must be positive")
     ]
 
+    @api.ondelete(at_uninstall=False)
+    def _unlink_if_state_new_cancelled(self):
+        if any(self.filtered(lambda property: property.state not in ['new', 'cancelled'])):
+            raise UserError('Only new and cancelled properties can be deleted.')
+
     @api.constrains("selling_price")
     def _check_selling_price(self):
         for record in self:
             if float_utils.float_is_zero(record.selling_price, 2):
                 return
-            if float_utils.float_compare(record.selling_price, (0.9 * record.expected_price), precision_digits=2):
+            if float_utils.float_compare(record.selling_price, (0.9 * record.expected_price), precision_digits=2) == -1:
                 raise ValidationError("The selling price cannot be lower than 90% of the expected price.")
 
     @api.depends('living_area', 'garden_area')
